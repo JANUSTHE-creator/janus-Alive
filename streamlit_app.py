@@ -2,7 +2,7 @@ import streamlit as st, requests
 
 KEY = "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"
 API = "https://api.groq.com/openai/v1"
-MODEL = "llama-3.3-70b-versatile"
+MODEL = "llama-3.1-8b-instant"
 
 AGENTS = {
     "BASE": "You are the JANUS base. Route the right agent to the job. Direct, no hedging.",
@@ -33,6 +33,10 @@ if msg:
     r = requests.post(API + "/chat/completions",
                       json={"model": MODEL, "messages": msgs, "temperature": 0.4},
                       headers={"Authorization": "Bearer " + KEY}, timeout=60)
-    out = r.json()["choices"][0]["message"]["content"]
+    data = r.json()
+    if "choices" in data:
+        out = data["choices"][0]["message"]["content"]
+    else:
+        out = "GROQ SAID: " + str(data)
     st.chat_message("assistant").write(out)
     st.session_state.hist += [(msg, out)]
