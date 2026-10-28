@@ -1,20 +1,9 @@
-import streamlit as st, requests, re
+import streamlit as st, requests, re, stripe
 
 KEY = "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"
 API = "https://api.groq.com/openai/v1"
-
-def pick_model():
-    try:
-        d = requests.get(API + "/models", headers={"Authorization": "Bearer " + KEY}, timeout=30).json()
-        ids = [m["id"] for m in d.get("data", [])]
-    except Exception:
-        return "openai/gpt-oss-120b"
-    for w in ["openai/gpt-oss-120b", "openai/gpt-oss-20b", "qwen/qwen3.8-27b"]:
-        if w in ids:
-            return w
-    return ids[0] if ids else "openai/gpt-oss-120b"
-
-MODEL = pick_model()
+STRIPE = "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"
+MODEL = "openai/gpt-oss-120b"
 
 AGENTS = {
     "BASE": "You are the JANUS base. Route the right agent to the job. Direct, no hedging.",
@@ -52,41 +41,3 @@ def bin_lookup(n):
         return r.json()
     except Exception as e:
         return {"error": str(e)}
-
-st.title("JANUS - war room")
-st.caption("model: " + MODEL)
-
-tab_chat, tab_card = st.tabs(["war room", "card check"])
-
-with tab_chat:
-    agent = st.selectbox("agent", list(AGENTS))
-    if "hist" not in st.session_state:
-        st.session_state.hist = []
-    for u, a in st.session_state.hist:
-        st.chat_message("user").write(u)
-        st.chat_message("assistant").write(a)
-    msg = st.chat_input("brief the base...")
-    if msg:
-        st.chat_message("user").write(msg)
-        msgs = [{"role": "system", "content": AGENTS[agent]}]
-        for u, a in st.session_state.hist:
-            msgs += [{"role": "user", "content": u}, {"role": "assistant", "content": a}]
-        msgs.append({"role": "user", "content": msg})
-        r = requests.post(API + "/chat/completions",
-                          json={"model": MODEL, "messages": msgs, "temperature": 0.4},
-                          headers={"Authorization": "Bearer " + KEY}, timeout=60)
-        d = r.json()
-        out = d["choices"][0]["message"]["content"] if "choices" in d else "GROQ SAID: " + str(d)
-        st.chat_message("assistant").write(out)
-        st.session_state.hist += [(msg, out)]
-
-with tab_card:
-    num = st.text_input("card number")
-    if num:
-        n = re.sub(r"\D", "", num)
-        ok = luhn(n)
-        st.write("luhn: " + ("PASS" if ok else "FAIL"))
-        if ok:
-            st.write("bin:")
-            st.json(bin_lookup(n))
-        st.caption("a card that passes here is FORMAT-valid. it is not proven live until it auths ($1 Stripe test).")
