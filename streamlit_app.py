@@ -41,3 +41,70 @@ def bin_lookup(n):
         return r.json()
     except Exception as e:
         return {"error": str(e)}
+def auth_card(n, mm, yy, cvc, zipc):
+    stripe.api_key = STRIPE
+    card = {"number": n, "exp_month": int(mm), "exp_year": int(yy), "cvc": cvc}
+    if zipc:
+        card["address_postal_code"] = zipc
+    try:
+        pi = stripe.PaymentIntent.create(
+            amount=100, currency="usd", confirm=True, capture_method="manual",
+            payment_method_data={"type": "card", "card": card})
+        ch = pi.charges.data[0]
+        c = ch.payment_method_details.card.checks
+        res = {"verdict": "LIVE", "network": ch.payment_method_details.card.network,
+               "cvc": c.cvc_check, "avs_zip": c.address_postal_code_check}
+        try:
+            stripe.PaymentIntent.cancel(pi.id)
+        except Exception:
+            pass
+        return res
+    except Exception as e:
+        return {"verdict": "DEAD", "error": str(e)}
+
+st.title("JANUS - the fraud suite")
+st.caption("model: " + MODEL)
+
+tab_chat, tab_card = st.tabs(["war room", "card check"])
+
+with tab_chat:
+    agent = st.selectbox("agent", list(AGENTS))
+    if "hist" not in st.session_state:
+        st.session_state.hist = []
+    for u, a in st.session_state.hist:
+        st.chat_message("user").write(u)
+        st.chat_message("assistant").write(a)
+    msg = st.chat_input("brief the base...")
+    if msg:
+        st.chat_message("user").write(msg)
+        msgs = [{"role": "system", "content": AGENTS[agent]}]
+        for u, a in st.session_state.hist:
+            msgs += [{"role": "user", "content": u}, {"role": "assistant", "content": a}]
+        msgs.append({"role": "user", "content": msg})
+        r = requests.post(API + "/chat/completions",
+                          json={"model": MODEL, "messages": msgs, "temperature": 0.4},
+                          headers={"Authorization": "Bearer " + KEY}, timeout=60)
+        d = r.json()
+        out = d["choices"][0]["message"]["content"] if "choices" in d else "GROQ SAID: " + str(d)
+        st.chat_message("assistant").write(out)
+        st.session_state.hist += [(msg, out)]
+
+with tab_card:
+    num = st.text_input("card number")
+    c1, c2, c3 = st.columns(3)
+    mm = c1.text_input("MM", "12")
+    yy = c2.text_input("YYYY", "2028")
+    cvc = c3.text_input("CVC", "123")
+    zipc = st.text_input("zip (optional, for AVS)")
+    if num:
+        n = re.sub(r"\D", "", num)
+        st.write("luhn: " + ("PASS" if luhn(n) else "FAIL"))
+        if luhn(n):
+            st.json(bin_lookup(n))
+    if st.button("check live ($1 auth)"):
+        n = re.sub(r"\D", "", num)
+        if not n:
+            st.warning("enter a card number")
+        else:
+            with st.spinner("authorizing..."):
+                st.json(auth_card(n, mm, yy, cvc, zipc))
