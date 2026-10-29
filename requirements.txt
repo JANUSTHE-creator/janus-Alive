@@ -1,3 +1,8 @@
 streamlit
 requests
 stripe
+dnspython
+python-whois
+phonenumbers
+
+
