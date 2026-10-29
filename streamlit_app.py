@@ -1,8 +1,9 @@
-import streamlit as st, requests, re, stripe
+import streamlit as st, requests, re, stripe, socket, dns.resolver, whois, phonenumbers
+from phonenumbers import carrier, geocoder, timezone, number_type
 
-KEY = "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"
+KEY = st.secrets.get("GROQ_KEY", "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")
+STRIPE = st.secrets.get("STRIPE_KEY", "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")
 API = "https://api.groq.com/openai/v1"
-STRIPE = "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"
 MODEL = "openai/gpt-oss-120b"
 
 AGENTS = {
@@ -41,6 +42,7 @@ def bin_lookup(n):
         return r.json()
     except Exception as e:
         return {"error": str(e)}
+
 def auth_card(n, mm, yy, cvc, zipc):
     stripe.api_key = STRIPE
     card = {"number": n, "exp_month": int(mm), "exp_year": int(yy), "cvc": cvc}
@@ -62,10 +64,60 @@ def auth_card(n, mm, yy, cvc, zipc):
     except Exception as e:
         return {"verdict": "DEAD", "error": str(e)}
 
+def dns_lookup(h):
+    out = {}
+    for t in ["A", "MX", "TXT", "NS"]:
+        try:
+            out[t] = [str(r) for r in dns.resolver.resolve(h, t)]
+        except Exception:
+            out[t] = []
+    return out
+
+def port_check(h, ports):
+    out = {}
+    for p in ports:
+        s = socket.socket()
+        s.settimeout(2)
+        out[str(p)] = "open" if s.connect_ex((h, p)) == 0 else "closed"
+        s.close()
+    return out
+
+def head_grab(u):
+    try:
+        r = requests.get(u, timeout=15, allow_redirects=True)
+        return {"status": r.status_code, "headers": dict(r.headers)}
+    except Exception as e:
+        return {"error": str(e)}
+
+def whois_lookup(h):
+    try:
+        return str(whois.whois(h))[:2000]
+    except Exception as e:
+        return str(e)
+
+def phone_lookup(n):
+    types = {0: "fixed", 1: "mobile", 2: "fixed_or_mobile", 3: "toll_free",
+             4: "premium", 5: "shared", 6: "voip", 7: "personal", 8: "pager",
+             9: "uan", 10: "voicemail", 27: "unknown"}
+    try:
+        p = phonenumbers.parse(n, None)
+    except Exception as e:
+        return {"error": str(e)}
+    return {
+        "valid": phonenumbers.is_valid_number(p),
+        "possible": phonenumbers.is_possible_number(p),
+        "country": geocoder.description_for_number(p, "en"),
+        "carrier": carrier.name_for_number(p, "en"),
+        "line_type": types.get(number_type(p), "unknown"),
+        "timezones": list(timezone.time_zones_for_number(p)),
+        "e164": phonenumbers.format_number(p, phonenumbers.PhoneNumberFormat.E164),
+    }
+
 st.title("JANUS - the fraud suite")
 st.caption("model: " + MODEL)
 
-tab_chat, tab_card = st.tabs(["war room", "card check"])
+tab_chat, tab_card, tab_tools, tab_phone = st.tabs(
+    ["war room", "card check", "tools", "phone"])
 
 with tab_chat:
     agent = st.selectbox("agent", list(AGENTS))
@@ -108,3 +160,17 @@ with tab_card:
         else:
             with st.spinner("authorizing..."):
                 st.json(auth_card(n, mm, yy, cvc, zipc))
+
+with tab_tools:
+    h = st.text_input("domain or host (no http://)")
+    if st.button("run recon") and h:
+        st.write("dns:"); st.json(dns_lookup(h))
+        st.write("ports:"); st.json(port_check(h, [21, 22, 25, 53, 80, 443, 3306, 8080, 8443]))
+        st.write("headers:"); st.json(head_grab("http://" + h))
+        st.write("whois:"); st.text(whois_lookup(h))
+
+with tab_phone:
+    ph = st.text_input("phone number (with country code, e.g. +5215512345678)")
+    if ph:
+        st.json(phone_lookup(ph))
+    st.caption("offline: carrier, line type, region. live status + SIM-swap needs a paid API.")
