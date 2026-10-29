@@ -1,8 +1,8 @@
 import streamlit as st, requests, re, stripe, socket, dns.resolver, whois, phonenumbers
 from phonenumbers import carrier, geocoder, timezone, number_type
 
-KEY = st.secrets["GROQ_KEY"]
-STRIPE = st.secrets["STRIPE_KEY"]
+KEY = st.secrets.get("GROQ_KEY", "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")
+STRIPE = st.secrets.get("STRIPE_KEY", "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")
 API = "https://api.groq.com/openai/v1"
 MODEL = "openai/gpt-oss-120b"
 
