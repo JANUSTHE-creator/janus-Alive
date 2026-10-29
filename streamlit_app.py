@@ -138,7 +138,7 @@ with tab_chat:
             msgs += [{"role": "user", "content": u}, {"role": "assistant", "content": a}]
         msgs.append({"role": "user", "content": msg})
         r = requests.post(API + "/chat/completions",
-                          json={"model": MODEL, "messages": msgs, "temperature": 0.4},
+                          json={"model": MODEL, "messages": msgs, "temperature": 0.25},
                           headers={"Authorization": "Bearer " + KEY}, timeout=60)
         d = r.json()
         out = d["choices"][0]["message"]["content"] if "choices" in d else "GROQ SAID: " + str(d)
