@@ -49,6 +49,10 @@ def bin_lookup(n):
 
 def auth_card(n, mm, yy, cvc, zipc):
     stripe.api_key = STRIPE
+try: mm = int(str(mm).strip())
+    except: mm = 12
+    try: yy = int(str(yy).strip())
+    except: yy = 30   
     card = {"number": n, "exp_month": int(mm), "exp_year": int(yy), "cvc": cvc}
     if zipc:
         card["address_postal_code"] = zipc
