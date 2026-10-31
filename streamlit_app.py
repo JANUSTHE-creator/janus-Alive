@@ -121,6 +121,8 @@ def recon(host):
     if dns:
         for t in ("MX", "TXT", "NS"):
             try: out[t] = [str(r) for r in dns.resolver.resolve(host, t)][:8]
+                try: socket.gethostbyname(host)
+    except Exception: return {"error": "not a hostname: " + host}
             except Exception: out[t] = []
     ports = []
   for p in (21, 22, 25, 80, 443, 3306, 5432, 6379, 8080, 8443, 27017):
