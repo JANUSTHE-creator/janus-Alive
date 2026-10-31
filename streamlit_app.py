@@ -123,11 +123,12 @@ def recon(host):
             try: out[t] = [str(r) for r in dns.resolver.resolve(host, t)][:8]
             except Exception: out[t] = []
     ports = []
-    for p in (21, 22, 25, 80, 443, 3306, 5432, 6379, 8080, 8443, 27017):
-        s = socket.socket(); s.settimeout(1.2)
-        if s.connect_ex((host, p)) == 0: ports.append(p)
-        s.close()
-    out["ports"] = ports
+  for p in (21, 22, 25, 80, 443, 3306, 5432, 6379, 8080, 8443, 27017):
+        try:
+            s = socket.socket(); s.settimeout(1.2)
+            if s.connect_ex((host, p)) == 0: ports.append(p)
+            s.close()
+        except Exception: pass
     try:
         r = requests.get(f"http://{host}", timeout=8, allow_redirects=True)
         out["http"] = r.status_code
