@@ -193,8 +193,9 @@ with tabs[1]:
         st.json(card_auth(n, mm, yy, cv, zp))
 
 with tabs[2]:
-    h = st.text_input("host", placeholder="thagate.cc")
-    if st.button("RECON") and h.strip(): st.json(recon(h.strip()))
+    if st.button("RECON") and h.strip():
+        d = re.search(r"\b((?:[a-z0-9-]+\.)+[a-z]{2,})\b", h, re.I)
+        st.json(recon(d.group(1).lower() if d else h.strip()))
 
 with tabs[3]:
     p = st.text_input("phone", placeholder="5053133510")
