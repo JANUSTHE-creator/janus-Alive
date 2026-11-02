@@ -1,0 +1,35 @@
+<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>THAGATE</title><style>
+*{margin:0;box-sizing:border-box}
+body{height:100vh;background:#04070a;background-image:radial-gradient(circle at 50% 40%,#06251a,transparent 60%);display:grid;place-items:center;font-family:ui-monospace,Menlo,monospace;color:#d7ffe9;overflow:hidden}
+.s{position:relative;width:310px;height:420px;perspective:1100px;filter:drop-shadow(0 0 22px rgba(0,255,136,.35))}
+.d{position:absolute;inset:0;display:flex}
+.d i{width:50%;background:linear-gradient(#0a1512,#050a08);border:1px solid #0f3b28;box-shadow:inset 0 0 40px #000;transition:transform 1.5s cubic-bezier(.7,0,.2,1)}
+.d i:first-child{transform-origin:left;border-right:1px solid #00ff88}
+.d i:last-child{transform-origin:right}
+.o .d i:first-child{transform:rotateY(-102deg)}
+.o .d i:last-child{transform:rotateY(102deg)}
+.l{position:absolute;inset:0;background:radial-gradient(circle at 50% 55%,rgba(0,255,136,.85),rgba(0,255,136,.12) 45%,transparent 70%);opacity:0;transition:1.1s}
+.o .l{opacity:1}
+.p{position:absolute;inset:0;display:grid;place-content:center;gap:12px;text-align:center;z-index:2;transition:.5s}
+h1{margin:0;font-size:20px;letter-spacing:.45em;font-weight:600;color:#00ff88;text-shadow:0 0 14px rgba(0,255,136,.7)}
+p{margin:0;font-size:9px;letter-spacing:.3em;color:#4d8a6e}
+input{background:#030705;border:1px solid #0f3b28;color:#d7ffe9;padding:12px;text-align:center;letter-spacing:.3em;font-family:inherit;outline:none}
+input:focus{border-color:#00ff88;box-shadow:0 0 14px rgba(0,255,136,.45)}
+button{background:#00ff88;color:#03130c;border:0;padding:12px;letter-spacing:.32em;font-size:10px;font-weight:700;font-family:inherit;cursor:pointer}
+.e{color:#ff5c7a;font-size:9px;letter-spacing:.2em;min-height:12px}
+</style></head><body>
+<div class="s" id="s">
+<div class="d"><i></i><i></i></div><div class="l"></div>
+<div class="p" id="p">
+<h1>THAGATE</h1><p>BY MALUS &amp; VENICE</p>
+<form id="f"><input id="w" type="password" placeholder="PASSCODE">
+<button>OPEN THE GATE</button><div class="e" id="e"></div></form>
+</div></div>
+<script>
+f.onsubmit=x=>{x.preventDefault();
+if(w.value=="thagate2026"){s.className="s o";p.style.opacity=0;
+setTimeout(()=>location.href="https://jrjmyc7dvg.streamlit.app",1500)}
+else e.textContent="DENIED";return false};
+</script></body></html>
